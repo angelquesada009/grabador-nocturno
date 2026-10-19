@@ -2,9 +2,15 @@ const botonActivar = document.getElementById("btn-activar");
 const mensaje = document.getElementById("mensaje");
 const barraNivel = document.getElementById("barra-nivel");
 
+// Ajustes de sensibilidad (se afinan probando en el iPhone).
+const SUELO_RUIDO = 3;    // por debajo de este nivel (0-100) se considera silencio
+const GANANCIA = 200;     // cuánto se amplifica el volumen
+const BAJADA = 0.9;       // 0-1: cuanto más alto, más despacio baja la barra
+
 let stream = null;
 let analizador = null;
 let datos = null;
+let nivelSuavizado = 0;
 
 async function activarMicrofono() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -55,13 +61,17 @@ function medirNivel() {
   }
   const rms = Math.sqrt(suma / datos.length); // volumen medio, de 0 a 1
 
-  // Multiplicamos para que los sonidos normales se noten en la barra.
-  return Math.min(100, Math.round(rms * 300));
+  // Amplificamos y quitamos el ruido de fondo (todo lo que sea menor que el suelo).
+  const nivel = Math.min(100, rms * GANANCIA);
+  return nivel < SUELO_RUIDO ? 0 : nivel;
 }
 
 // Se repite unas 60 veces por segundo para mover la barra.
 function actualizarBarra() {
-  barraNivel.style.width = medirNivel() + "%";
+  const nivel = medirNivel();
+  // Sube rápido con los sonidos, pero baja despacio para que no tiemble.
+  nivelSuavizado = Math.max(nivel, nivelSuavizado * BAJADA);
+  barraNivel.style.width = nivelSuavizado + "%";
   requestAnimationFrame(actualizarBarra);
 }
 
