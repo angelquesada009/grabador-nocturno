@@ -212,27 +212,147 @@ function crearLineaTiempo(noche, sonidos, filas) {
   return contenedor;
 }
 
+// ===== Reproductor con onda =====
+let reproductorActivo = null;   // solo suena un sonido a la vez
+
+function formatoTiempo(segundos) {
+  const s = Math.max(0, Math.floor(segundos));
+  return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+}
+
+// Lee el audio guardado (WAV de 16 bits tras 44 bytes de cabecera) y saca el volumen de cada tramo.
+function calcularPicos(buffer, cantidad) {
+  const muestras = new Int16Array(buffer, 44, Math.floor((buffer.byteLength - 44) / 2));
+  const tramo = Math.max(1, Math.floor(muestras.length / cantidad));
+  const picos = [];
+  for (let i = 0; i < cantidad; i++) {
+    let maximo = 0;
+    for (let j = i * tramo; j < Math.min(muestras.length, (i + 1) * tramo); j++) {
+      maximo = Math.max(maximo, Math.abs(muestras[j]));
+    }
+    picos.push(maximo);
+  }
+  // Se escala al más alto para que también se vean los sonidos flojos.
+  const mayor = Math.max(...picos, 1);
+  return picos.map((p) => p / mayor);
+}
+
+function crearReproductor(sonido) {
+  const elemento = crear("div", "", "reproductor");
+  elemento.hidden = true;
+
+  const audio = document.createElement("audio");
+  const boton = crear("button", "Reproducir", "accion");
+  const tiempo = crear("span", "0:00 / " + formatoTiempo(sonido.duracion), "tiempo");
+  const lienzo = document.createElement("canvas");
+  lienzo.className = "onda";
+  const controles = crear("div", "", "reproductor-controles");
+  controles.append(boton, tiempo);
+  elemento.append(lienzo, controles);
+
+  const estilos = getComputedStyle(document.documentElement);
+  const colorHecho = estilos.getPropertyValue("--ambar").trim();
+  const colorPendiente = estilos.getPropertyValue("--linea").trim();
+  let picos = null;
+  let animacion = null;
+
+  const duracion = () => (isFinite(audio.duration) && audio.duration > 0 ? audio.duration : sonido.duracion);
+
+  function dibujar() {
+    if (!picos) return;
+    const escala = window.devicePixelRatio || 1;
+    const ancho = lienzo.clientWidth;
+    const alto = lienzo.clientHeight;
+    if (lienzo.width !== Math.round(ancho * escala)) {
+      lienzo.width = Math.round(ancho * escala);
+      lienzo.height = Math.round(alto * escala);
+    }
+    const c = lienzo.getContext("2d");
+    c.setTransform(escala, 0, 0, escala, 0, 0);
+    c.clearRect(0, 0, ancho, alto);
+
+    const avance = audio.currentTime / duracion();
+    const paso = ancho / picos.length;
+    picos.forEach((p, i) => {
+      const altura = Math.max(2, p * (alto - 4));
+      c.fillStyle = i / picos.length < avance ? colorHecho : colorPendiente;
+      c.fillRect(i * paso + paso * 0.2, (alto - altura) / 2, paso * 0.6, altura);
+    });
+    tiempo.textContent = formatoTiempo(audio.currentTime) + " / " + formatoTiempo(duracion());
+  }
+
+  function bucle() {
+    dibujar();
+    if (!audio.paused) animacion = requestAnimationFrame(bucle);
+  }
+
+  audio.addEventListener("play", () => { boton.textContent = "Pausa"; bucle(); });
+  audio.addEventListener("pause", () => { boton.textContent = "Reproducir"; cancelAnimationFrame(animacion); dibujar(); });
+  audio.addEventListener("ended", () => { audio.currentTime = 0; dibujar(); });
+
+  boton.addEventListener("click", () => {
+    if (audio.paused) {
+      pararOtroReproductor(audio);
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  });
+
+  // Tocar la onda mueve la reproducción a ese punto.
+  lienzo.addEventListener("pointerdown", (evento) => {
+    const caja = lienzo.getBoundingClientRect();
+    audio.currentTime = Math.max(0, Math.min(1, (evento.clientX - caja.left) / caja.width)) * duracion();
+    dibujar();
+  });
+
+  async function abrir() {
+    if (!audio.src) {
+      const registro = await BD.leerAudio(sonido.id);
+      picos = calcularPicos(registro.datos, 90);
+      audio.src = URL.createObjectURL(new Blob([registro.datos], { type: "audio/wav" }));
+    }
+    elemento.hidden = false;
+    dibujar();
+    pararOtroReproductor(audio);
+    audio.play().catch(() => {}); // si el móvil lo bloquea, se pulsa "Reproducir"
+  }
+
+  return { elemento, abrir };
+}
+
+function pararOtroReproductor(actual) {
+  if (reproductorActivo && reproductorActivo !== actual) reproductorActivo.pause();
+  reproductorActivo = actual;
+}
+
 function crearFila(sonido, noche) {
   const fila = crear("div", "", "fila");
   const cabecera = crear("div", "", "fila-cabecera");
   cabecera.append(crear("strong", textoHora(sonido.hora)), crear("span", textoDuracion(sonido.duracion)));
 
-  const reproductor = document.createElement("audio");
-  reproductor.controls = true;
-  reproductor.hidden = true;
+  const reproductor = crearReproductor(sonido);
 
   const acciones = crear("div", "", "fila-botones");
   const escuchar = crear("button", "Escuchar", "accion");
   escuchar.addEventListener("click", async () => {
     try {
-      if (!reproductor.src) {
-        const registro = await BD.leerAudio(sonido.id);
-        reproductor.src = URL.createObjectURL(new Blob([registro.datos], { type: "audio/wav" }));
-      }
-      reproductor.hidden = false;
-      reproductor.play().catch(() => {}); // si el móvil lo bloquea, se pulsa play en el reproductor
+      await reproductor.abrir();
     } catch (error) {
       escuchar.textContent = "No se pudo cargar";
+    }
+  });
+
+  const guardar = crear("button", "Guardar", "texto");
+  guardar.addEventListener("click", async () => {
+    try {
+      const registro = await BD.leerAudio(sonido.id);
+      const enlace = document.createElement("a");
+      enlace.href = URL.createObjectURL(new Blob([registro.datos], { type: "audio/wav" }));
+      enlace.download = "sonido-" + new Date(sonido.hora).toISOString().slice(0, 19).replace(/[:T]/g, "-") + ".wav";
+      enlace.click();
+    } catch (error) {
+      guardar.textContent = "No se pudo guardar";
     }
   });
 
@@ -241,11 +361,11 @@ function crearFila(sonido, noche) {
     pedirConfirmacion(acciones, "¿Borrar este sonido?", async () => {
       await BD.borrarSonidos([sonido.id]);
       mostrarSonidos(noche);
-    }, () => acciones.replaceChildren(escuchar, borrar));
+    }, () => acciones.replaceChildren(escuchar, guardar, borrar));
   });
 
-  acciones.append(escuchar, borrar);
-  fila.append(cabecera, acciones, reproductor);
+  acciones.append(escuchar, guardar, borrar);
+  fila.append(cabecera, acciones, reproductor.elemento);
   return fila;
 }
 

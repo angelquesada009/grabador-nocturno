@@ -530,3 +530,32 @@ button.peligro-relleno {
     animation: none;
   }
 }
+
+/* ----- Reproductor con onda ----- */
+.reproductor {
+  margin-top: 14px;
+}
+
+.onda {
+  display: block;
+  width: 100%;
+  height: 56px;
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: 2px;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.reproductor-controles {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.tiempo {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--tenue);
+}
