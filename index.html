@@ -2,23 +2,49 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Grabador de sonidos nocturnos</title>
-  <link rel="stylesheet" href="style.css?v=2">
+  <meta name="theme-color" content="#050505">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Sueño">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <main>
-    <h1>Grabador nocturno</h1>
+    <nav>
+      <button id="tab-escuchar" class="activa">Escuchar</button>
+      <button id="tab-grabaciones">Grabaciones</button>
+    </nav>
 
-    <button id="btn-activar">Activar micrófono</button>
-    <p id="mensaje">Pulsa el botón para empezar.</p>
+    <section id="vista-escuchar">
+      <h1>Grabador nocturno</h1>
 
-    <div id="barra">
-      <div id="barra-nivel"></div>
-      <div id="barra-umbral"></div>
-    </div>
+      <button id="btn-activar">Activar micrófono</button>
+      <p id="mensaje">Pulsa el botón para empezar.</p>
+
+      <div id="barra">
+        <div id="barra-nivel"></div>
+        <div id="barra-umbral"></div>
+      </div>
+
+      <p id="contador"></p>
+      <button id="btn-noche" class="secundario">Pantalla negra</button>
+    </section>
+
+    <section id="vista-grabaciones" hidden>
+      <div id="lista"></div>
+    </section>
   </main>
 
-  <script src="app.js?v=2"></script>
+  <div id="pantalla-negra" hidden>
+    <p>Toca la pantalla para salir</p>
+  </div>
+
+  <script src="db.js?v=3"></script>
+  <script src="app.js?v=3"></script>
+  <script src="grabaciones.js?v=3"></script>
 </body>
 </html>

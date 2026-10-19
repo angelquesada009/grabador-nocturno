@@ -1,18 +1,31 @@
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   background: #050505;
   color: #bbb;
   font-family: system-ui, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 main {
   width: 90%;
   max-width: 400px;
+  margin: 0 auto;
+  padding: 16px 0 40px;
   text-align: center;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin-top: 30px;
+}
+
+h2 {
+  font-size: 1.1rem;
+  text-align: left;
 }
 
 button {
@@ -24,6 +37,35 @@ button {
   border-radius: 8px;
 }
 
+button.secundario {
+  font-size: 0.95rem;
+  padding: 10px 16px;
+  color: #999;
+}
+
+button.peligro {
+  color: #e57373;
+}
+
+/* ----- Pestañas ----- */
+nav {
+  display: flex;
+  gap: 8px;
+}
+
+nav button {
+  flex: 1;
+  padding: 10px;
+  font-size: 1rem;
+}
+
+nav button.activa {
+  background: #2a2a2a;
+  color: #fff;
+  border-color: #555;
+}
+
+/* ----- Barra de nivel ----- */
 #barra {
   position: relative;
   height: 24px;
@@ -52,4 +94,73 @@ button {
   left: 2%;
   width: 2px;
   background: #ddd;
+}
+
+#contador {
+  min-height: 1.2em;
+  font-size: 0.9rem;
+}
+
+/* ----- Lista de grabaciones ----- */
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  margin-bottom: 10px;
+  text-align: left;
+  font-size: 1rem;
+}
+
+.tarjeta span {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.fila {
+  margin: 12px 0;
+  padding: 12px;
+  text-align: left;
+  background: #0f0f0f;
+  border: 1px solid #222;
+  border-radius: 8px;
+}
+
+.fila-cabecera {
+  display: flex;
+  justify-content: space-between;
+}
+
+.fila-botones {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fila-botones button {
+  flex: 1;
+  padding: 10px;
+  font-size: 1rem;
+}
+
+.fila audio {
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* ----- Pantalla negra para dormir ----- */
+#pantalla-negra {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: #000;
+}
+
+#pantalla-negra p {
+  margin-bottom: 40px;
+  font-size: 0.8rem;
+  color: #1c1c1c;
 }
