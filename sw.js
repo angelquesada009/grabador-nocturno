@@ -1,6 +1,6 @@
 ﻿// Guarda una copia de la app para poder abrirla sin conexión.
 // Primero intenta descargar la versión nueva; si no hay internet, usa la copia guardada.
-const CACHE = "grabador-nocturno-v4";
+const CACHE = "grabador-nocturno-v5";
 
 self.addEventListener("install", () => self.skipWaiting());
 
