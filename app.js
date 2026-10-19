@@ -1,11 +1,14 @@
 const botonActivar = document.getElementById("btn-activar");
 const mensaje = document.getElementById("mensaje");
 const barraNivel = document.getElementById("barra-nivel");
+const barraUmbral = document.getElementById("barra-umbral");
 
 // Ajustes de sensibilidad (se afinan probando en el iPhone).
-const SUELO_RUIDO = 3;    // por debajo de este nivel (0-100) se considera silencio
-const GANANCIA = 200;     // cuánto se amplifica el volumen
-const BAJADA = 0.9;       // 0-1: cuanto más alto, más despacio baja la barra
+const GANANCIA = 400;             // cuánto se amplifica el volumen
+const BAJADA = 0.9;               // 0-1: cuanto más alto, más despacio baja la barra
+const SEGUNDOS_CALIBRACION = 3;   // tiempo que escucha el ruido de fondo al empezar
+const MARGEN = 2.5;               // un sonido cuenta si es 2,5 veces el ruido de fondo
+const UMBRAL_MINIMO = 2;          // umbral mínimo (0-100), por si la habitación es muy silenciosa
 
 let stream = null;
 let contexto = null;
@@ -13,6 +16,13 @@ let analizador = null;
 let datos = null;
 let nivelSuavizado = 0;
 let idAnimacion = null;
+
+// Calibración del ruido de fondo.
+let inicioCalibracion = 0;
+let sumaCalibracion = 0;
+let muestrasCalibracion = 0;
+let ruidoFondo = null;   // null mientras se está calibrando
+let umbral = UMBRAL_MINIMO;
 
 // El mismo botón sirve para activar y para parar.
 function alternarMicrofono() {
@@ -33,7 +43,7 @@ async function activarMicrofono() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     await empezarAMedir();
-    mensaje.textContent = "Escuchando…";
+    mensaje.textContent = "Calibrando… quédate en silencio " + SEGUNDOS_CALIBRACION + " segundos.";
     botonActivar.textContent = "Parar micrófono";
   } catch (error) {
     pararMicrofono(); // por si el micro se llegó a abrir antes del fallo
@@ -59,6 +69,14 @@ async function empezarAMedir() {
   fuente.connect(analizador);
 
   datos = new Uint8Array(analizador.fftSize);
+
+  // Empezamos la calibración desde cero.
+  inicioCalibracion = performance.now();
+  sumaCalibracion = 0;
+  muestrasCalibracion = 0;
+  ruidoFondo = null;
+  ponerUmbral(UMBRAL_MINIMO);
+
   actualizarBarra();
 }
 
@@ -74,17 +92,49 @@ function medirNivel() {
   }
   const rms = Math.sqrt(suma / datos.length); // volumen medio, de 0 a 1
 
-  // Amplificamos y quitamos el ruido de fondo (todo lo que sea menor que el suelo).
-  const nivel = Math.min(100, rms * GANANCIA);
-  return nivel < SUELO_RUIDO ? 0 : nivel;
+  return Math.min(100, rms * GANANCIA);
+}
+
+// Coloca la marca del umbral en la barra.
+function ponerUmbral(valor) {
+  umbral = valor;
+  barraUmbral.style.left = Math.min(100, umbral) + "%";
+}
+
+// Durante los primeros segundos solo escuchamos para saber cuánto ruido hay de fondo.
+function calibrar(nivel) {
+  sumaCalibracion += nivel;
+  muestrasCalibracion++;
+
+  const segundos = (performance.now() - inicioCalibracion) / 1000;
+  if (segundos < SEGUNDOS_CALIBRACION) return;
+
+  ruidoFondo = sumaCalibracion / muestrasCalibracion;
+  // La barra muestra el nivel menos el ruido de fondo, así que el umbral
+  // también se calcula sobre esa diferencia.
+  ponerUmbral(Math.max(UMBRAL_MINIMO, ruidoFondo * (MARGEN - 1)));
+  mensaje.textContent = "Escuchando…";
 }
 
 // Se repite unas 60 veces por segundo para mover la barra.
 function actualizarBarra() {
   const nivel = medirNivel();
+
+  if (ruidoFondo === null) {
+    calibrar(nivel);
+    barraNivel.style.width = "0%";
+    idAnimacion = requestAnimationFrame(actualizarBarra);
+    return;
+  }
+
+  // Quitamos el ruido de fondo: en silencio la barra se queda en 0.
+  const sobreFondo = Math.max(0, nivel - ruidoFondo);
   // Sube rápido con los sonidos, pero baja despacio para que no tiemble.
-  nivelSuavizado = Math.max(nivel, nivelSuavizado * BAJADA);
+  nivelSuavizado = Math.max(sobreFondo, nivelSuavizado * BAJADA);
   barraNivel.style.width = nivelSuavizado + "%";
+  // Rojo cuando el sonido supera el umbral.
+  barraNivel.classList.toggle("sonido", sobreFondo > umbral);
+
   idAnimacion = requestAnimationFrame(actualizarBarra);
 }
 
@@ -104,7 +154,9 @@ function pararMicrofono() {
   }
   analizador = null;
   nivelSuavizado = 0;
+  ruidoFondo = null;
   barraNivel.style.width = "0%";
+  barraNivel.classList.remove("sonido");
   botonActivar.textContent = "Activar micrófono";
 }
 

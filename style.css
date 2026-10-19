@@ -25,6 +25,7 @@ button {
 }
 
 #barra {
+  position: relative;
   height: 24px;
   margin-top: 30px;
   background: #111;
@@ -37,4 +38,18 @@ button {
   width: 0%;
   height: 100%;
   background: #2e7d32;
+}
+
+#barra-nivel.sonido {
+  background: #c62828;
+}
+
+/* Marca que indica a partir de qué nivel se considera "sonido". */
+#barra-umbral {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2%;
+  width: 2px;
+  background: #ddd;
 }
