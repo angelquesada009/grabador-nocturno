@@ -1,5 +1,5 @@
-﻿// Guarda una copia de la app para poder abrirla sin conexiÃ³n.
-// Primero intenta descargar la versiÃ³n nueva; si no hay internet, usa la copia guardada.
+﻿// Guarda una copia de la app para poder abrirla sin conexión.
+// Primero intenta descargar la versión nueva; si no hay internet, usa la copia guardada.
 const CACHE = "grabador-nocturno-v4";
 
 self.addEventListener("install", () => self.skipWaiting());
