@@ -8,9 +8,21 @@ const GANANCIA = 200;     // cuánto se amplifica el volumen
 const BAJADA = 0.9;       // 0-1: cuanto más alto, más despacio baja la barra
 
 let stream = null;
+let contexto = null;
 let analizador = null;
 let datos = null;
 let nivelSuavizado = 0;
+let idAnimacion = null;
+
+// El mismo botón sirve para activar y para parar.
+function alternarMicrofono() {
+  if (stream) {
+    pararMicrofono();
+    mensaje.textContent = "Micrófono parado.";
+  } else {
+    activarMicrofono();
+  }
+}
 
 async function activarMicrofono() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -22,8 +34,9 @@ async function activarMicrofono() {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     await empezarAMedir();
     mensaje.textContent = "Escuchando…";
-    botonActivar.disabled = true;
+    botonActivar.textContent = "Parar micrófono";
   } catch (error) {
+    pararMicrofono(); // por si el micro se llegó a abrir antes del fallo
     if (error.name === "NotAllowedError") {
       mensaje.textContent = "Has denegado el permiso. Actívalo en los ajustes del navegador.";
     } else if (error.name === "NotFoundError") {
@@ -37,7 +50,7 @@ async function activarMicrofono() {
 // Conecta el micrófono a un "analizador" que nos da el volumen.
 async function empezarAMedir() {
   const AudioContextCompatible = window.AudioContext || window.webkitAudioContext;
-  const contexto = new AudioContextCompatible();
+  contexto = new AudioContextCompatible();
   await contexto.resume(); // Safari a veces lo deja en pausa
 
   const fuente = contexto.createMediaStreamSource(stream);
@@ -72,7 +85,27 @@ function actualizarBarra() {
   // Sube rápido con los sonidos, pero baja despacio para que no tiemble.
   nivelSuavizado = Math.max(nivel, nivelSuavizado * BAJADA);
   barraNivel.style.width = nivelSuavizado + "%";
-  requestAnimationFrame(actualizarBarra);
+  idAnimacion = requestAnimationFrame(actualizarBarra);
 }
 
-botonActivar.addEventListener("click", activarMicrofono);
+// Apaga el micrófono del todo y deja la barra a cero.
+function pararMicrofono() {
+  if (idAnimacion) {
+    cancelAnimationFrame(idAnimacion);
+    idAnimacion = null;
+  }
+  if (stream) {
+    stream.getTracks().forEach((pista) => pista.stop());
+    stream = null;
+  }
+  if (contexto) {
+    contexto.close();
+    contexto = null;
+  }
+  analizador = null;
+  nivelSuavizado = 0;
+  barraNivel.style.width = "0%";
+  botonActivar.textContent = "Activar micrófono";
+}
+
+botonActivar.addEventListener("click", alternarMicrofono);
