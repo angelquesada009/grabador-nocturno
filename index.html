@@ -4,33 +4,48 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Grabador de sonidos nocturnos</title>
-  <meta name="theme-color" content="#050505">
+  <meta name="theme-color" content="#07090d">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Sueño">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <main>
+    <header class="cabecera">
+      <span class="marca">Sueño</span>
+      <span id="estado" class="estado" data-estado="reposo"><i></i><b id="estado-texto">En reposo</b></span>
+    </header>
+
     <nav>
       <button id="tab-escuchar" class="activa">Escuchar</button>
       <button id="tab-grabaciones">Grabaciones</button>
     </nav>
 
     <section id="vista-escuchar">
-      <h1>Grabador nocturno</h1>
-
-      <button id="btn-activar">Activar micrófono</button>
-      <p id="mensaje">Pulsa el botón para empezar.</p>
+      <div class="reloj-bloque">
+        <div id="reloj">--:--</div>
+        <div id="fecha"></div>
+      </div>
 
       <div id="barra">
         <div id="barra-nivel"></div>
         <div id="barra-umbral"></div>
       </div>
 
-      <p id="contador"></p>
+      <dl class="datos">
+        <div><dt>Escuchando</dt><dd id="stat-tiempo">0:00:00</dd></div>
+        <div><dt>Sonidos</dt><dd id="stat-sonidos">0</dd></div>
+        <div><dt>Umbral</dt><dd id="stat-umbral">2.0</dd></div>
+      </dl>
+
+      <button id="btn-activar" class="principal">Activar micrófono</button>
+      <p id="mensaje">Pulsa el botón para empezar.</p>
       <button id="btn-noche" class="secundario">Pantalla negra</button>
     </section>
 
@@ -43,8 +58,8 @@
     <p>Toca la pantalla para salir</p>
   </div>
 
-  <script src="db.js?v=3"></script>
-  <script src="app.js?v=3"></script>
-  <script src="grabaciones.js?v=3"></script>
+  <script src="db.js?v=4"></script>
+  <script src="app.js?v=4"></script>
+  <script src="grabaciones.js?v=4"></script>
 </body>
 </html>

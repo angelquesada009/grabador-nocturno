@@ -2,7 +2,13 @@
 const botonActivar = document.getElementById("btn-activar");
 const botonNoche = document.getElementById("btn-noche");
 const mensaje = document.getElementById("mensaje");
-const contador = document.getElementById("contador");
+const statSonidos = document.getElementById("stat-sonidos");
+const statUmbral = document.getElementById("stat-umbral");
+const statTiempo = document.getElementById("stat-tiempo");
+const reloj = document.getElementById("reloj");
+const fecha = document.getElementById("fecha");
+const estado = document.getElementById("estado");
+const estadoTexto = document.getElementById("estado-texto");
 const barraNivel = document.getElementById("barra-nivel");
 const barraUmbral = document.getElementById("barra-umbral");
 const pantallaNegra = document.getElementById("pantalla-negra");
@@ -30,6 +36,7 @@ let bloqueoPantalla = null;
 let nivelSuavizado = 0;
 let sobreFondoActual = 0;
 let sonidosSesion = 0;
+let inicioEscucha = 0;
 
 // Calibración del ruido de fondo.
 let inicioCalibracion = 0;
@@ -68,6 +75,10 @@ async function activarMicrofono() {
     await empezarAEscuchar();
     mensaje.textContent = "Calibrando… quédate en silencio " + SEGUNDOS_CALIBRACION + " segundos.";
     botonActivar.textContent = "Parar micrófono";
+    ponerEstado("calibrando");
+    inicioEscucha = Date.now();
+    sonidosSesion = 0;
+    statSonidos.textContent = "0";
     pedirPantallaEncendida();
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
   } catch (error) {
@@ -135,6 +146,8 @@ function pararMicrofono() {
   barraNivel.style.width = "0%";
   barraNivel.classList.remove("sonido");
   botonActivar.textContent = "Activar micrófono";
+  inicioEscucha = 0;
+  ponerEstado("reposo");
 }
 
 // ===== Procesado del sonido (se ejecuta cada ~0,1 segundos) =====
@@ -185,6 +198,7 @@ function calibrar(nivel, ahora) {
   // también se calcula sobre esa diferencia.
   ponerUmbral(Math.max(UMBRAL_MINIMO, ruidoFondo * (MARGEN - 1)));
   mensaje.textContent = "Escuchando…";
+  ponerEstado("escuchando");
 }
 
 // Pasa de la frecuencia del móvil (44100 o 48000) a 16000, haciendo la media de cada tramo.
@@ -212,6 +226,7 @@ function empezarGrabacion(ahora) {
   ultimoRuido = ahora;
   horaInicio = Date.now() - (muestrasGrabadas / FRECUENCIA) * 1000;
   mensaje.textContent = "Grabando sonido…";
+  ponerEstado("grabando");
 }
 
 async function terminarGrabacion() {
@@ -229,8 +244,11 @@ async function terminarGrabacion() {
       crearWav(partes, muestras)
     );
     sonidosSesion++;
-    contador.textContent = "Sonidos guardados en esta sesión: " + sonidosSesion;
-    if (stream && ruidoFondo !== null) mensaje.textContent = "Escuchando…";
+    statSonidos.textContent = sonidosSesion;
+    if (stream && ruidoFondo !== null) {
+      mensaje.textContent = "Escuchando…";
+      ponerEstado("escuchando");
+    }
   } catch (error) {
     mensaje.textContent = "No se pudo guardar el sonido (¿sin espacio?).";
   }
@@ -277,7 +295,42 @@ function crearWav(partes, totalMuestras) {
 function ponerUmbral(valor) {
   umbral = valor;
   barraUmbral.style.left = Math.min(100, umbral) + "%";
+  statUmbral.textContent = umbral.toFixed(1);
 }
+
+// ===== Estado, reloj y tiempo de escucha =====
+const TEXTOS_ESTADO = {
+  reposo: "En reposo",
+  calibrando: "Calibrando",
+  escuchando: "Escuchando",
+  grabando: "Grabando",
+};
+
+function ponerEstado(nombre) {
+  estado.dataset.estado = nombre;
+  estadoTexto.textContent = TEXTOS_ESTADO[nombre];
+}
+
+function dosCifras(n) {
+  return String(n).padStart(2, "0");
+}
+
+function actualizarReloj() {
+  const ahora = new Date();
+  reloj.textContent = dosCifras(ahora.getHours()) + ":" + dosCifras(ahora.getMinutes());
+  fecha.textContent = ahora.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+
+  if (inicioEscucha) {
+    const s = Math.floor((Date.now() - inicioEscucha) / 1000);
+    statTiempo.textContent = Math.floor(s / 3600) + ":" + dosCifras(Math.floor(s / 60) % 60) + ":" + dosCifras(s % 60);
+  } else {
+    statTiempo.textContent = "0:00:00";
+  }
+}
+
+actualizarReloj();
+setInterval(actualizarReloj, 1000);
+ponerEstado("reposo");
 
 // Se repite unas 60 veces por segundo para mover la barra.
 function actualizarBarra() {

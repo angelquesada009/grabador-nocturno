@@ -1,134 +1,304 @@
+:root {
+  --fondo: #07090d;
+  --panel: #0d1118;
+  --linea: #1c2430;
+  --texto: #d9d4c7;
+  --tenue: #7c8493;
+  --ambar: #d9a441;
+  --ambar-oscuro: #6b4f1c;
+  --grabando: #c8473d;
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+
 [hidden] {
   display: none !important;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: #050505;
-  color: #bbb;
-  font-family: system-ui, sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--serif);
+  -webkit-text-size-adjust: 100%;
 }
 
 main {
-  width: 90%;
-  max-width: 400px;
+  width: 100%;
+  max-width: 420px;
   margin: 0 auto;
-  padding: 16px 0 40px;
-  text-align: center;
-}
-
-h1 {
-  font-size: 1.5rem;
-  margin-top: 30px;
-}
-
-h2 {
-  font-size: 1.1rem;
-  text-align: left;
+  padding: max(20px, env(safe-area-inset-top)) 22px 48px;
 }
 
 button {
-  padding: 14px 24px;
-  font-size: 1.1rem;
-  color: #ddd;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 8px;
+  font-family: var(--serif);
+  color: var(--texto);
+  background: none;
+  border: 1px solid var(--linea);
+  border-radius: 3px;
+  cursor: pointer;
 }
 
-button.secundario {
-  font-size: 0.95rem;
-  padding: 10px 16px;
-  color: #999;
+button:focus-visible {
+  outline: 2px solid var(--ambar);
+  outline-offset: 2px;
 }
 
-button.peligro {
-  color: #e57373;
+h2 {
+  margin: 28px 0 14px;
+  font-size: 1.35rem;
+  font-weight: 400;
+}
+
+/* ----- Cabecera y estado ----- */
+.cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 14px;
+}
+
+.marca {
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--tenue);
+}
+
+.estado b {
+  font-weight: 400;
+}
+
+.estado i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tenue);
+}
+
+.estado[data-estado="calibrando"] i,
+.estado[data-estado="escuchando"] i {
+  background: var(--ambar);
+}
+
+.estado[data-estado="grabando"] i {
+  background: var(--grabando);
+  animation: latido 1.2s ease-in-out infinite;
+}
+
+.estado[data-estado="grabando"] {
+  color: var(--texto);
+}
+
+@keyframes latido {
+  50% { opacity: 0.25; }
 }
 
 /* ----- Pestañas ----- */
 nav {
   display: flex;
-  gap: 8px;
+  gap: 26px;
+  border-bottom: 1px solid var(--linea);
 }
 
 nav button {
-  flex: 1;
-  padding: 10px;
+  padding: 10px 0;
   font-size: 1rem;
+  color: var(--tenue);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
 }
 
 nav button.activa {
-  background: #2a2a2a;
-  color: #fff;
-  border-color: #555;
+  color: var(--texto);
+  border-bottom-color: var(--ambar);
 }
 
-/* ----- Barra de nivel ----- */
+/* ----- Reloj ----- */
+.reloj-bloque {
+  padding: 44px 0 36px;
+  text-align: center;
+}
+
+#reloj {
+  font-size: 5.2rem;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+#fecha {
+  margin-top: 12px;
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--tenue);
+}
+
+/* ----- Medidor ----- */
 #barra {
   position: relative;
-  height: 24px;
-  margin-top: 30px;
-  background: #111;
-  border: 1px solid #222;
-  border-radius: 12px;
+  height: 56px;
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: 2px;
   overflow: hidden;
+}
+
+/* Graduaciones cada 10 %. */
+#barra::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 9px;
+  background: repeating-linear-gradient(to right, var(--linea) 0, var(--linea) 1px, transparent 1px, transparent 10%);
+  pointer-events: none;
 }
 
 #barra-nivel {
   width: 0%;
   height: 100%;
-  background: #2e7d32;
+  background: linear-gradient(to right, var(--ambar-oscuro), var(--ambar));
 }
 
 #barra-nivel.sonido {
-  background: #c62828;
+  background: linear-gradient(to right, #5a1f1b, var(--grabando));
 }
 
-/* Marca que indica a partir de qué nivel se considera "sonido". */
+/* Marca del umbral: a partir de aquí se considera sonido. */
 #barra-umbral {
   position: absolute;
   top: 0;
   bottom: 0;
   left: 2%;
-  width: 2px;
-  background: #ddd;
+  width: 1px;
+  background: var(--texto);
+  z-index: 1;
 }
 
-#contador {
-  min-height: 1.2em;
-  font-size: 0.9rem;
+#barra-umbral::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -4px;
+  border: 4px solid transparent;
+  border-top-color: var(--texto);
 }
 
-/* ----- Lista de grabaciones ----- */
+/* ----- Datos de la sesión ----- */
+.datos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 22px 0 34px;
+  padding: 0;
+}
+
+.datos div {
+  padding: 0 0 0 14px;
+  border-left: 1px solid var(--linea);
+}
+
+.datos div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.datos dt {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--tenue);
+}
+
+.datos dd {
+  margin: 4px 0 0;
+  font-family: var(--mono);
+  font-size: 1.05rem;
+}
+
+/* ----- Botones ----- */
+button.principal {
+  display: block;
+  width: 100%;
+  padding: 17px;
+  font-size: 1.1rem;
+  color: var(--fondo);
+  background: var(--ambar);
+  border-color: var(--ambar);
+}
+
+body:has(#estado:not([data-estado="reposo"])) button.principal {
+  color: var(--ambar);
+  background: none;
+}
+
+#mensaje {
+  min-height: 1.5em;
+  margin: 14px 0 22px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--tenue);
+}
+
+button.secundario {
+  display: block;
+  margin: 0 auto;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  color: var(--tenue);
+}
+
+button.peligro {
+  color: #d9776e;
+}
+
+/* ----- Lista de grabaciones (se rediseña en el siguiente paso) ----- */
 .tarjeta {
   display: flex;
   flex-direction: column;
   gap: 4px;
   width: 100%;
   margin-bottom: 10px;
+  padding: 14px 16px;
   text-align: left;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  background: var(--panel);
 }
 
 .tarjeta span {
   font-size: 0.9rem;
-  color: #888;
+  color: var(--tenue);
 }
 
 .fila {
   margin: 12px 0;
-  padding: 12px;
+  padding: 12px 14px;
   text-align: left;
-  background: #0f0f0f;
-  border: 1px solid #222;
-  border-radius: 8px;
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: 2px;
 }
 
 .fila-cabecera {
   display: flex;
   justify-content: space-between;
+  font-family: var(--mono);
 }
 
 .fila-botones {
@@ -163,4 +333,10 @@ nav button.activa {
   margin-bottom: 40px;
   font-size: 0.8rem;
   color: #1c1c1c;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .estado[data-estado="grabando"] i {
+    animation: none;
+  }
 }
